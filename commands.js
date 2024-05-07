@@ -1,6 +1,6 @@
-import 'dotenv/config';
-import { getRPSChoices } from './game.js';
-import { capitalize, InstallGlobalCommands } from './utils.js';
+import "dotenv/config";
+import { getRPSChoices } from "./game.js";
+import { capitalize, InstallGlobalCommands } from "./utils.js";
 
 // Get the game choices from game.js
 function createCommandChoices() {
@@ -19,20 +19,20 @@ function createCommandChoices() {
 
 // Simple test command
 const TEST_COMMAND = {
-  name: 'test',
-  description: 'Basic command',
+  name: "test",
+  description: "Basic command",
   type: 1,
 };
 
 // Command containing options
 const CHALLENGE_COMMAND = {
-  name: 'challenge',
-  description: 'Challenge to a match of rock paper scissors',
+  name: "challenge",
+  description: "Challenge to a match of rock paper scissors",
   options: [
     {
       type: 3,
-      name: 'object',
-      description: 'Pick your object',
+      name: "object",
+      description: "Pick your object",
       required: true,
       choices: createCommandChoices(),
     },
@@ -40,6 +40,20 @@ const CHALLENGE_COMMAND = {
   type: 1,
 };
 
-const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND];
+const CHECK_COMMAND = {
+  name: "check",
+  description: "Check if the user is in game",
+  options: [
+    {
+      type: 3,
+      name: "matchId",
+      description: "enter your match id",
+      required: true,
+    },
+  ],
+  type: 1,
+};
+
+const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND, CHECK_COMMAND];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
