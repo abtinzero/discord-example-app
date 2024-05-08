@@ -1,7 +1,8 @@
-const axios = require("axios");
+import axios from "axios";
 import "dotenv/config";
 
-module.exports = { createChannel, sendDM };
+var token = `Bot ${process.env.DISCORD_TOKEN}`;
+var cookie = "";
 
 export function createChannel(matchId, users) {
   let data = JSON.stringify({
@@ -93,7 +94,6 @@ function sendMultipleDM(code, users) {
 }
 
 function createDM(code, user) {
-  const axios = require("axios");
   let data = JSON.stringify({
     recipient_id: user,
   });

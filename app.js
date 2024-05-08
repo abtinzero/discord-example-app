@@ -31,7 +31,6 @@ const activeGames = {};
 app.post("/interactions", async function (req, res) {
   // Interaction type and data
   const { type, id, data } = req.body;
-
   /**
    * Handle verification requests
    */
@@ -95,18 +94,19 @@ app.post("/interactions", async function (req, res) {
     if (name === "check" && id) {
       const userId = req.body.member.user.id;
       // User's object choice
-      const matchId = req.body.data.options[0].value;
+      //const matchId = req.body.data.options[0].value;
 
       // Create active game using message ID as the game ID
-      if (activeGames[id] == null) {
+      /*if (activeGames[id] == null) {
         activeGames[id] = {
           ids: [userId],
           objectName,
         };
       } else {
         activeGames[id].ids.push(userId);
-      }
-      //createChannel(data.matchId, data.users);
+      }*/
+      var matchId = 12345;
+      createChannel(matchId, [userId]);
       return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {

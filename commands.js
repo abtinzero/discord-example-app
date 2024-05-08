@@ -43,14 +43,6 @@ const CHALLENGE_COMMAND = {
 const CHECK_COMMAND = {
   name: "check",
   description: "Check if the user is in game",
-  options: [
-    {
-      type: 3,
-      name: "matchId",
-      description: "enter your match id",
-      required: true,
-    },
-  ],
   type: 1,
 };
 
