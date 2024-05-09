@@ -14,7 +14,7 @@ import {
 } from "./utils.js";
 import { createChannel } from "./requests.js";
 import { getShuffledOptions, getResult } from "./game.js";
-
+import url from url
 // Create an express app
 const app = express();
 // Get port, or default to 3000
@@ -24,7 +24,26 @@ app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
 
 // Store for in-progress games. In production, you'd want to use a DB
 const activeGames = {};
+app.get('/api/auth/discord/redirect', async (req, res) =>{
+  const {code} = req.query;
 
+  if (code) {
+    const formData = new url.URLSearchParams({
+      client_id: process.env.APP_ID,
+      client_secret: process.env.DISCORD_TOKEN,
+      grant_type: 'authorization_code',
+      code: code.toString(),
+      redirect_uri: 'http://localhost:3000/api/auth/discord/redirect',
+    })
+
+    const output = await axios.post('https://discord.com/api/v10/oauth2/token',
+      formData, {
+        headers:{
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
+  }
+})
 /**
  * Interactions endpoint URL where Discord will send HTTP requests
  */
