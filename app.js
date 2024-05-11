@@ -14,7 +14,7 @@ import {
 } from "./utils.js";
 import { createChannel } from "./requests.js";
 import { getShuffledOptions, getResult } from "./game.js";
-import url from url
+import axios from "axios";
 // Create an express app
 const app = express();
 // Get port, or default to 3000
@@ -28,9 +28,9 @@ app.get('/api/auth/discord/redirect', async (req, res) =>{
   const {code} = req.query;
 
   if (code) {
-    const formData = new url.URLSearchParams({
+    const formData = new URLSearchParams({
       client_id: process.env.APP_ID,
-      client_secret: process.env.DISCORD_TOKEN,
+      client_secret: process.env.CLIENT_SECRET,
       grant_type: 'authorization_code',
       code: code.toString(),
       redirect_uri: 'http://localhost:3000/api/auth/discord/redirect',
@@ -42,6 +42,14 @@ app.get('/api/auth/discord/redirect', async (req, res) =>{
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
+
+    const output1 = await axios.get('https://discord.com/api/v10/users/@me/connections',
+      {
+        headers:{
+          'Authorization': `Bearer ${output.data.access_token}`
+        },
+      });
+    res.send(JSON.stringify(output1.data));
   }
 })
 /**
