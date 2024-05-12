@@ -12,9 +12,8 @@ import {
   getRandomEmoji,
   DiscordRequest,
 } from "./utils.js";
-import { createChannel } from "./requests.js";
+import { createChannel, getAccessToken, getRiotPUUID, getUserConnections, isInMatch } from "./requests.js";
 import { getShuffledOptions, getResult } from "./game.js";
-import axios from "axios";
 // Create an express app
 const app = express();
 // Get port, or default to 3000
@@ -24,48 +23,7 @@ app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
 
 // Store for in-progress games. In production, you'd want to use a DB
 const activeGames = {};
-export async function getAccessToken(code){
-  const formData = new URLSearchParams({
-    client_id: process.env.APP_ID,
-    client_secret: process.env.CLIENT_SECRET,
-    grant_type: 'authorization_code',
-    code: code.toString(),
-    redirect_uri: 'http://localhost:3000/api/auth/discord/redirect',
-  })
-  const output = await axios.post('https://discord.com/api/v10/oauth2/token',
-  formData, {
-    headers:{
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-  });
-  return output.data.access_token;
-}
-export async function getUserConnections(access_token){
-  const output = await axios.get('https://discord.com/api/v10/users/@me/connections',
-      {
-        headers:{
-          'Authorization': `Bearer ${access_token}`
-        },
-      });
-  return output.data;
-}
-export async function getRiotPUUID(riot_id){
 
-  let config = {
-    maxBodyLength: Infinity,
-    url: `https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${riot_id.split("#")[0]}/${riot_id.split("#")[1]}`,
-    headers: { 
-      'X-Riot-Token': process.env.RIOT_TOKEN
-    }
-  };
-  const output = await axios.get(`https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${riot_id.split("#")[0]}/${riot_id.split("#")[1]}`,
-  {
-    headers:{
-      'X-Riot-Token': process.env.RIOT_TOKEN
-    },
-  });
-  return output.data.puuid;
-}
 app.get('/api/auth/discord/redirect', async (req, res) =>{
   const {code} = req.query;
 
@@ -77,7 +35,7 @@ app.get('/api/auth/discord/redirect', async (req, res) =>{
     const riot_id = connections.find(x=> x.type === "riotgames").name;
     const riot_puuid = await getRiotPUUID(riot_id);
     console.log(riot_puuid);
-    
+    isInMatch(riot_puuid);
 
   }
 })
