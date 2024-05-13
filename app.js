@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import { db } from "./database.js";
 import {
   InteractionType,
   InteractionResponseType,
@@ -12,7 +13,15 @@ import {
   getRandomEmoji,
   DiscordRequest,
 } from "./utils.js";
-import { createChannel, getAccessToken, getRiotPUUID, getUserConnections, isInMatch } from "./requests.js";
+import {
+  createChannel,
+  getDiscordUser,
+  getRiotPUUID,
+  getUserConnections,
+  isInMatch,
+} from "./requests.js";
+import { getUserDTObydiscordId } from "./user.queries.js";
+import { addOrUpdateUserCommand } from "./user.commands.js";
 import { getShuffledOptions, getResult } from "./game.js";
 // Create an express app
 const app = express();
@@ -24,21 +33,28 @@ app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
 // Store for in-progress games. In production, you'd want to use a DB
 const activeGames = {};
 
-app.get('/api/auth/discord/redirect', async (req, res) =>{
-  const {code} = req.query;
+app.get("/api/auth/discord/redirect", async (req, res) => {
+  const { code } = req.query;
 
   if (code) {
-    const access_token = await getAccessToken(code);
-    
+    const discord_user = await getDiscordUser(code);
+    const access_token = discord_user.access_token;
     const connections = await getUserConnections(access_token);
 
-    const riot_id = connections.find(x=> x.type === "riotgames").name;
+    const riot_id = connections.find((x) => x.type === "riotgames").name;
     const riot_puuid = await getRiotPUUID(riot_id);
-    console.log(riot_puuid);
-    isInMatch(riot_puuid);
 
+    addOrUpdateUserCommand({
+      access_token: access_token,
+      refresh_token: discord_user.refresh_token,
+      riot_id: riot_id,
+      riot_puuid: riot_puuid,
+      discord_user: discord_user.id,
+    });
+    console.log(riot_puuid);
   }
-})
+});
+
 /**
  * Interactions endpoint URL where Discord will send HTTP requests
  */
@@ -119,27 +135,25 @@ app.post("/interactions", async function (req, res) {
       } else {
         activeGames[id].ids.push(userId);
       }*/
-      var matchId = 12345;
-      createChannel(matchId, [userId]);
+      var userDTO = getUserDTObydiscordId(userId);
+      var message;
+      if (userDTO.riot_puuid != null) {
+        if (isInMatch(userDTO.riot_puuid)) {
+          createChannel("12345", [userId]);
+          message = "Game Found! Invite sent";
+        } else {
+          message = "Error. Not in game";
+        }
+      } else {
+        message =
+          "Please authenticate yourself using this oauth2 link: " +
+          "https://discord.com/oauth2/authorize?client_id=1127271354547318956&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fdiscord%2Fredirect&scope=connections";
+      }
       return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
           // Fetches a random emoji to send from a helper function
-          content: `Rock papers scissors challenge from <@${userId}>`,
-          components: [
-            {
-              type: MessageComponentTypes.ACTION_ROW,
-              components: [
-                {
-                  type: MessageComponentTypes.BUTTON,
-                  // Append the game ID to use later on
-                  custom_id: `accept_button_${req.body.id}`,
-                  label: "Accept",
-                  style: ButtonStyleTypes.PRIMARY,
-                },
-              ],
-            },
-          ],
+          content: message,
         },
       });
     }
