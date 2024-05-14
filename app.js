@@ -16,6 +16,7 @@ import {
 import {
   createChannel,
   getDiscordUser,
+  getDiscordUserTokens,
   getRiotPUUID,
   getUserConnections,
   isInMatch,
@@ -37,19 +38,19 @@ app.get("/api/auth/discord/redirect", async (req, res) => {
   const { code } = req.query;
 
   if (code) {
-    const discord_user = await getDiscordUser(code);
-    const access_token = discord_user.access_token;
+    const discord_tokens = await getDiscordUserTokens(code);
+    const access_token = discord_tokens.access_token;
     const connections = await getUserConnections(access_token);
-
+    const discord_user = await getDiscordUser(access_token);
     const riot_id = connections.find((x) => x.type === "riotgames").name;
     const riot_puuid = await getRiotPUUID(riot_id);
 
     addOrUpdateUserCommand({
-      access_token: access_token,
-      refresh_token: discord_user.refresh_token,
+      discord_access_token: access_token,
+      discord_refresh_token: discord_tokens.refresh_token,
       riot_id: riot_id,
       riot_puuid: riot_puuid,
-      discord_user: discord_user.id,
+      discord_id: discord_user.id,
     });
     console.log(riot_puuid);
   }
@@ -135,7 +136,11 @@ app.post("/interactions", async function (req, res) {
       } else {
         activeGames[id].ids.push(userId);
       }*/
-      var userDTO = getUserDTObydiscordId(userId);
+      var userDTO; 
+      await getUserDTObydiscordId(userId)
+      .then(rows => {
+        userDTO = rows[0];
+      });
       var message;
       if (userDTO.riot_puuid != null) {
         if (isInMatch(userDTO.riot_puuid)) {

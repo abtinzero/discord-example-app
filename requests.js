@@ -119,7 +119,7 @@ function createDM(code, user) {
       console.log(error);
     });
 }
-export async function getDiscordUser(code) {
+export async function getDiscordUserTokens(code) {
   const formData = new URLSearchParams({
     client_id: process.env.APP_ID,
     client_secret: process.env.CLIENT_SECRET,
@@ -133,6 +133,17 @@ export async function getDiscordUser(code) {
     {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
+      },
+    }
+  );
+  return output.data;
+}
+export async function getDiscordUser(access_token){
+  const output = await axios.get(
+    "https://discord.com/api/v10/users/@me",
+    {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
       },
     }
   );

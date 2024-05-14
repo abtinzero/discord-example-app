@@ -1,15 +1,13 @@
 import { db } from "./database.js";
 export function getUserDTObydiscordId(id) {
-  var sql = "select * from user where discord_id = ?";
+  return new Promise((resolve, reject) => {
+  var sql = "select * from users where discord_id = ?";
   var params = [id];
+  var data;
   db.all(sql, params, (err, rows) => {
     if (err) {
-      res.status(400).json({ error: err.message });
-      return;
-    }
-    res.json({
-      message: "success",
-      data: rows,
-    });
-  });
-}
+      console.log(err);
+      reject(err); // Reject the promise with the error
+  } else {
+      resolve(rows); // Resolve the promise with the result rows
+  }})})}
