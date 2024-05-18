@@ -174,18 +174,39 @@ export async function getRiotPUUID(riot_id) {
   return output.data.puuid;
 }
 export async function isInMatch(puuid) {
-  try {
-    const output = await axios.get(
-      `https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/${puuid}`,
-      {
-        headers: {
-          "X-Riot-Token": process.env.RIOT_TOKEN,
+  if(process.env.debug == false){
+    try {
+      const output = await axios.get(
+        `https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/${puuid}`,
+        {
+          headers: {
+            "X-Riot-Token": process.env.RIOT_TOKEN,
+          },
+        }
+      );
+      return output;
+    } catch {
+      console.log("mofo is not in game skull emoji");
+      return false;
+    }
+  }
+  else{
+    return {
+      "gameId": 54321,
+      "players": {
+        "player1": {
+          "champion": "zyra",
+          "id": "abtin0",
         },
+        "player2": {
+          "champion": "zac",
+          "id": "omino magico"
+        },
+        "player3": {
+          "champion": "zilean",
+          "id": "kero0x"
+        }
       }
-    );
-    return output;
-  } catch {
-    console.log("mofo is not in game skull emoji");
-    return false;
+    }
   }
 }

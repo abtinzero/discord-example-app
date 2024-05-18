@@ -21,10 +21,13 @@ import {
   getUserConnections,
   isInMatch,
 } from "./requests.js";
+import path from "path";
+
 import { getUserDTObydiscordId } from "./user.queries.js";
 import { addOrUpdateUserCommand } from "./user.commands.js";
 import { getShuffledOptions, getResult } from "./game.js";
 // Create an express app
+const __dirname = import.meta.dirname;
 const app = express();
 // Get port, or default to 3000
 const PORT = process.env.PORT || 3000;
@@ -33,7 +36,9 @@ app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
 
 // Store for in-progress games. In production, you'd want to use a DB
 const activeGames = {};
-
+app.get("/", function(req, res) {
+  res.sendFile(path.join(__dirname, './index.html'));
+})
 app.get("/api/auth/discord/redirect", async (req, res) => {
   const { code } = req.query;
 
@@ -68,11 +73,6 @@ app.post("/interactions", async function (req, res) {
   if (type === InteractionType.PING) {
     return res.send({ type: InteractionResponseType.PONG });
   }
-
-  /**
-   * Handle slash command requests
-   * See https://discord.com/developers/docs/interactions/application-commands#slash-commands
-   */
   if (type === InteractionType.APPLICATION_COMMAND) {
     const { name } = data;
 
@@ -124,36 +124,8 @@ app.post("/interactions", async function (req, res) {
     }
     if (name === "check" && id) {
       const userId = req.body.member.user.id;
-      // User's object choice
-      //const matchId = req.body.data.options[0].value;
-
-      // Create active game using message ID as the game ID
-      /*if (activeGames[id] == null) {
-        activeGames[id] = {
-          ids: [userId],
-          objectName,
-        };
-      } else {
-        activeGames[id].ids.push(userId);
-      }*/
-      var userDTO; 
-      await getUserDTObydiscordId(userId)
-      .then(rows => {
-        userDTO = rows[0];
-      });
-      var message;
-      if (userDTO.riot_puuid != null) {
-        if (isInMatch(userDTO.riot_puuid)) {
-          createChannel("12345", [userId]);
-          message = "Game Found! Invite sent";
-        } else {
-          message = "Error. Not in game";
-        }
-      } else {
-        message =
-          "Please authenticate yourself using this oauth2 link: " +
-          "https://discord.com/oauth2/authorize?client_id=1127271354547318956&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fdiscord%2Fredirect&scope=connections";
-      }
+      var message = await checkUserInMatch(userId);
+      
       return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
@@ -164,7 +136,33 @@ app.post("/interactions", async function (req, res) {
     }
   }
 });
-
+app.get("/check", async function(req, res){
+  await checkUserInMatch("161075627800264704");
+});
 app.listen(PORT, () => {
   console.log("Listening on port", PORT);
 });
+
+export async function checkUserInMatch(userId){
+  var userDTO; 
+  await getUserDTObydiscordId(userId)
+  .then(rows => {
+    userDTO = rows[0];
+  });
+  var message;
+  if (userDTO.riot_puuid != null) {
+    let game_data = await isInMatch(userDTO.riot_puuid);
+    if (game_data) {
+      createChannel(game_data.gameId, [userId]);
+      message = "Game Found! Invite sent";
+    } else {
+      message = "Error. Not in game";
+    }
+  } else {
+    message =
+      "Please authenticate yourself using this oauth2 link: " +
+      "https://discord.com/oauth2/authorize?client_id=1127271354547318956&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fdiscord%2Fredirect&scope=connections";
+  }
+
+  return message;
+}
